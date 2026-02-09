@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  operator
+}
+
+enum OptionCategory {
+  qualification
+  degree_level
+  major
+  major_language
+  country_code
+}
+
+enum ExportScope {
+  all
+  today
+}
+
+enum LeadStatus {
+  draft
+  done
+  cancelled
+}
+
+enum EvidenceImageSource {
+  frame
+  upload
+}
+
+enum QrDecodeStatus {
+  decoded
+  failed
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(operator)
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  leads     Lead[]
+  auditLogs AuditLog[]
+  sessions  Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Expo {
+  id        String    @id @default(cuid())
+  name      String
+  location  String?
+  date      DateTime?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  settings      Settings?
+  selectOptions SelectOption[]
+  leads         Lead[]
+  auditLogs     AuditLog[]
+
+  @@map("expos")
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  expoId    String   @unique @map("expo_id")
+  logosJson String?  @map("logos_json") @db.Text
+  exportIncludeDrafts      Boolean     @default(true) @map("export_include_drafts")
+  exportIncludeNeedsReview Boolean     @default(false) @map("export_include_needs_review")
+  exportIncludeCancelled   Boolean     @default(false) @map("export_include_cancelled")
+  exportScope              ExportScope @default(all) @map("export_scope")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  expo Expo @relation(fields: [expoId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}
+
+model SelectOption {
+  id        String         @id @default(cuid())
+  expoId    String         @map("expo_id")
+  category  OptionCategory
+  valueAr   String         @map("value_ar")
+  isActive  Boolean        @default(true) @map("is_active")
+  sortOrder Int            @default(0) @map("sort_order")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  expo Expo @relation(fields: [expoId], references: [id], onDelete: Cascade)
+
+  @@map("select_options")
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  expoId          String   @map("expo_id")
+  createdByUserId String   @map("created_by_user_id")
+  
+  qrRaw           String?  @map("qr_raw") @db.Text
+  qrHash          String?  @map("qr_hash") @db.Char(64)
+  
+  evidenceImagePath   String?             @map("evidence_image_path") @db.VarChar(255)
+  evidenceImageSource EvidenceImageSource @default(frame) @map("evidence_image_source")
+  qrDecodeStatus      QrDecodeStatus      @default(decoded) @map("qr_decode_status")
+  qrDecodeError       String?             @map("qr_decode_error") @db.Text
+  
+  generatedQrImagePath String? @map("generated_qr_image_path") @db.VarChar(255)
+  
+  name          String?  @db.VarChar(255)
+  phoneCountry  String?  @map("phone_country") @db.VarChar(8)
+  phoneNumber   String?  @map("phone_number") @db.VarChar(32)
+  qualification String?  @db.VarChar(255)
+  degreeLevel   String?  @map("degree_level") @db.VarChar(255)
+  major         String?  @db.VarChar(255)
+  majorLanguage String?  @map("major_language") @db.VarChar(255)
+  notes         String?  @db.Text
+  status      LeadStatus @default(draft)
+  scanCount   Int        @default(1) @map("scan_count")
+  scannedAt   DateTime   @default(now()) @map("scanned_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  cancelledAt DateTime?  @map("cancelled_at")
+
+  expo      Expo @relation(fields: [expoId], references: [id], onDelete: Cascade)
+  createdBy User @relation(fields: [createdByUserId], references: [id])
+
+  @@unique([expoId, qrHash], name: "expo_qr_unique")
+  @@map("leads")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  expoId       String   @map("expo_id")
+  userId       String   @map("user_id")
+  action       String
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  metadataJson String?  @map("metadata_json") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  expo Expo @relation(fields: [expoId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
