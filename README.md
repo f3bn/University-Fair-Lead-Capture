@@ -1,8 +1,4 @@
-﻿<<<<<<< HEAD
-# University-Fair-Lead-Capture
-Internet-facing lead capture system for university fairs. The app supports Arabic (RTL) and English (LTR), QR scanning from mobile, live lead handling on dashboard/receiver, secure image handling, and Excel/PDF exports.
-=======
-ï»¿# University Fair Lead Capture
+﻿# University Fair Lead Capture
 
 Internet-facing lead capture system for university fairs.
 The app supports Arabic (RTL) and English (LTR), QR scanning from mobile, live lead handling on dashboard/receiver, secure image handling, and Excel/PDF exports.
@@ -195,3 +191,5 @@ Alternative names:
 
 This project is proprietary and closed-source. See `LICENSE`.
 
+
+العربية: هذا المشروع ملكية خاصة (Proprietary) وغير مفتوح المصدر.
